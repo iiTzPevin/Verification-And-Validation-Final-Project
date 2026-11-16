@@ -1,0 +1,13 @@
+sim_build/
+results.xml
+coverage.dat
+coverage.yml
+__pycache__/
+*.fst
+*.vcd
+
+craft-vv-student/code/capstone/trojan/formal/secure_gate_*/
+
+!craft-vv-student/code/capstone/trojan/formal/traces/*.vcd
+
+*.zip

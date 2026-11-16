@@ -11,7 +11,7 @@ SIM           ?= icarus
 DUT ?= $(CURDIR)/secure_gate_clean.sv
 VERILOG_SOURCES = $(DUT)
 TOPLEVEL = secure_gate
-MODULE   = test_smoke, test_final
+MODULE   = test_smoke,test_final
 
 export PYTHONPATH := $(CURDIR)/../../lib:$(PYTHONPATH)
 
