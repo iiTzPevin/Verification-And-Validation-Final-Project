@@ -20,6 +20,7 @@ override SIM := verilator
 VERILOG_SOURCES += $(CURDIR)/sva/checker.sv \
                    $(CURDIR)/sva/bind.sv
 EXTRA_ARGS += --assert
+EXTRA_ARGS += --coverage-user
 endif
 
 include $(shell cocotb-config --makefiles)/Makefile.sim

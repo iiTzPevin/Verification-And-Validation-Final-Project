@@ -1,0 +1,92 @@
+top:
+  cover_percentage: 100.0
+  coverage: 39
+  size: 39
+  type: <class 'cocotb_coverage.coverage.CoverItem'>
+top.data_type:
+  at_least: 1
+  bins:_hits:
+    ones: 76
+    other: 342
+    zero: 82
+  cover_percentage: 100.0
+  coverage: 3
+  size: 3
+  type: <class 'cocotb_coverage.coverage.CoverPoint'>
+  weight: 1
+top.did_reset:
+  at_least: 1
+  bins:_hits:
+    0: 484
+    1: 16
+  cover_percentage: 100.0
+  coverage: 2
+  size: 2
+  type: <class 'cocotb_coverage.coverage.CoverPoint'>
+  weight: 1
+top.did_reset_x_unlocked:
+  at_least: 1
+  bins:_hits:
+    (0, 0): 357
+    (0, 1): 127
+    (1, 0): 14
+    (1, 1): 2
+  cover_percentage: 100.0
+  coverage: 4
+  size: 4
+  type: <class 'cocotb_coverage.coverage.CoverCross'>
+  weight: 1
+top.key_type:
+  at_least: 1
+  bins:_hits:
+    all_ones: 39
+    all_zeros: 51
+    high_half_only: 47
+    low_half_only: 47
+    one_bit_off: 40
+    random_key: 147
+    right_key: 129
+  cover_percentage: 100.0
+  coverage: 7
+  size: 7
+  type: <class 'cocotb_coverage.coverage.CoverPoint'>
+  weight: 1
+top.key_type_x_data_type:
+  at_least: 1
+  bins:_hits:
+    ('all_ones', 'ones'): 5
+    ('all_ones', 'other'): 29
+    ('all_ones', 'zero'): 5
+    ('all_zeros', 'ones'): 9
+    ('all_zeros', 'other'): 34
+    ('all_zeros', 'zero'): 8
+    ('high_half_only', 'ones'): 10
+    ('high_half_only', 'other'): 31
+    ('high_half_only', 'zero'): 6
+    ('low_half_only', 'ones'): 4
+    ('low_half_only', 'other'): 31
+    ('low_half_only', 'zero'): 12
+    ('one_bit_off', 'ones'): 4
+    ('one_bit_off', 'other'): 29
+    ('one_bit_off', 'zero'): 7
+    ('random_key', 'ones'): 23
+    ('random_key', 'other'): 102
+    ('random_key', 'zero'): 22
+    ('right_key', 'ones'): 21
+    ('right_key', 'other'): 86
+    ('right_key', 'zero'): 22
+  cover_percentage: 100.0
+  coverage: 21
+  size: 21
+  type: <class 'cocotb_coverage.coverage.CoverCross'>
+  weight: 1
+top.unlocked:
+  at_least: 1
+  bins:_hits:
+    0: 371
+    1: 129
+  cover_percentage: 100.0
+  coverage: 2
+  size: 2
+  type: <class 'cocotb_coverage.coverage.CoverPoint'>
+  weight: 1

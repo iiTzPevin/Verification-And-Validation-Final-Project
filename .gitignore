@@ -1,7 +1,6 @@
-sim_build/
+sim_build*/
 results.xml
 coverage.dat
-coverage.yml
 __pycache__/
 *.fst
 *.vcd

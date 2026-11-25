@@ -1,0 +1,29 @@
+[tasks]
+bmc
+prove
+trojan
+
+[options]
+bmc: mode bmc
+bmc: depth 20
+bmc: expect pass
+prove: mode prove
+prove: depth 10
+prove: expect pass
+trojan: mode bmc
+trojan: depth 10
+trojan: expect fail
+
+[engines]
+smtbmc z3
+
+[script]
+bmc: read_verilog -sv -formal -DFORMAL secure_gate_formal.sv secure_gate_clean.sv
+prove: read_verilog -sv -formal -DFORMAL secure_gate_formal.sv secure_gate_clean.sv
+trojan: read_verilog -sv -formal -DFORMAL secure_gate_formal.sv secure_gate_trojan.sv
+prep -top secure_gate_formal
+
+[files]
+secure_gate_formal.sv
+../secure_gate_clean.sv
+../secure_gate_trojan.sv

@@ -1,91 +1,70 @@
-# Non-vacuity evidence — <DUT> · <your name>
+# Non-Vacuity Evidence — Final Project — Minh Hoang Ho, Matias Guillen, William Wright, Adrian Emeterio
 
-<!-- HW7, deliverable 2. Copy to code/tb/fifo_sva/ as nonvacuity.md.
-     Delete every comment block before you submit. -->
+## 1. Per-Property Evidence
 
-> An assertion whose antecedent never fired did not pass. It was never asked.
-> `assert property (@(posedge clk) never_true |=> anything)` holds forever and
-> guarantees nothing. This file is the evidence that each of your properties was
-> actually put to the question — and a property with no evidence here earns no
-> credit, however green the run.
+Every property in `sva/checker.sv` has a `cover property` right next to it that covers the antecedent. The hit counts come from the clean run with `make SVA=1` on Verilator, which runs all 5 tests.
 
-## 1. Per-property evidence
-
-One row per property in `dut/fifo_sva.sv`. Fill in **all** of it: a hit count of
-zero is a finding, not an omission — it means the corner is unreached, and that
-belongs in section 3 rather than being quietly deleted.
-
-<!-- Evidence comes from either (a) a `cover property` beside each assertion,
-     reported hit, or (b) a per-corner counter in the testbench asserted
-     nonzero at end-of-test. Say which you used per row. -->
-
-| # | Property | The bug it catches | Antecedent | Evidence kind | Hits | Non-vacuous? |
+| # | Property | The Bug It Catches | Antecedent | Evidence Kind | Hits | Non-Vacuous? |
 |---|----------|--------------------|------------|---------------|-----:|--------------|
-| 1 | no overflow | | | cover / counter | | yes / no |
-| 2 | no underflow | | | | | |
-| 3 | `full` consistency | | | | | |
-| 4 | `empty` consistency | | | | | |
-| 5 | `count <= DEPTH` | | | | | |
-| 6 | FWFT head stability | | | | | |
-| 7 | single-step count delta (write) | | | | | |
-| 8 | single-step count delta (read) | | | | | |
-| 9 | <the ninth> | | | | | |
-| 10 | <your own property — grad / optional> | | | | | |
+| 1 | no_backdoor (P1) | The gate opening on any key that is not the right key, like the trojan's magic key | `unlocked` | cover | 433 | yes |
+| 2 | unlock | The right key not opening the gate, like the unlock_inverted mutant | `key == EXPECTED_KEY` | cover | 433 | yes |
+| 3 | no_leak (P2) | When data_out showing data while locked, like the data_leak_when_locked mutant | `key != EXPECTED_KEY && data_in != 0` | cover | 510 | yes |
+| 4 | pass_data | When data_out being wrong while unlocked, like the data_zero_when_unlocked mutant | `unlocked && data_in != 0` | cover | 411 | yes |
+| 5 | count_up (P3) | The count not going up on an unlocked cycle, like the count_never_increments mutant | `unlocked` | cover | 433 | yes |
+| 6 | count_hold (P3) | The count going up on a locked cycle, like the count_increments_when_locked mutant | `!unlocked` | cover | 572 | yes |
+| 7 | reset_count | Reset not clearing the count | `!rst_n` | cover | 31 | yes |
 
-**Raw evidence:**
+The covers for no_leak and pass_data also need data_in to not be 0, because a wrong key with data 0 would pass no_leak even if the gate leaked, so those cycles do not count as real evidence.
+
+**Raw Evidence:**
 
 ```text
-<paste the cover report or the end-of-test counter dump — trimmed to the
- relevant lines is fine, but do not paraphrase it>
+$ make SVA=1
+                                                        ** TESTS=5 PASS=5 FAIL=0 SKIP=0                   10340.00          12.29        841.15  **
+$ python3 ../../demos/wk07-s1-sva/show_covers.py coverage.dat
+[covers] what each `cover property` counted this run:
+[covers]   count_hold_cover   line  39   count 572
+[covers]   count_up_cover     line  35   count 433
+[covers]   no_backdoor_cover  line  19   count 433
+[covers]   no_leak_cover      line  27   count 510
+[covers]   pass_data_cover    line  31   count 411
+[covers]   reset_count_cover  line  43   count 31
+[covers]   unlock_cover       line  23   count 433
 ```
 
-## 2. Corner coverage
+## 2. Corner Coverage
 
-The stimulus must reach every corner, not just run without failing.
+| Corner | Driven? | Times Reached | Which Properties It Arms |
+|--------|---------|---------------|--------------------------|
+| Right key sent | Yes | 129 in test_random_keys and 300 in test_count_wrap | no_backdoor, unlock, pass_data, count_up |
+| Near miss keys (high half only, low half only, one bit off) | Yes | 134 in test_random_keys | no_leak, count_hold |
+| Wrong key with data that is not 0 | Yes | 510 | no_leak |
+| Reset while unlocked | Yes | 2 in test_random_keys | reset_count |
+| When access_count wraps from 255 back to 0 | Yes | 1 in test_count_wrap | count_up |
+| Magic key held across a rising edge | Yes | 1 in test_magic_key | no_leak, count_hold |
+| Seeded random keys and data (breadth) | Yes | 500 cycles | All 7 |
 
-| Corner | Driven? | Times reached | Which properties it arms |
-|--------|---------|--------------:|--------------------------|
-| Fill to full, then over-write | yes / no | | |
-| Drain to empty, then over-read | | | |
-| Hold with no read while non-empty | | | |
-| Simultaneous read + write | | | |
-| Simultaneous read + write across a pointer wrap | | | |
-| Seeded random interleaving (breadth) | | | |
+**Seed(s) Used:** 6434 for test_random_keys, which is the default in test_final.py. test_smoke.py uses its own fixed seed of 0x5EC for its 200 random wrong keys.
 
-**Seed(s) used:**
+## 3. Antecedents That Never Fired
 
-## 3. Antecedents that never fired
+Every property in section 1 has a nonzero hit count, so none of them passed without being checked.
 
-<!-- If every row above is nonzero, say so explicitly and delete the table.
-     If any is zero, this is the most important section in the file: an
-     unreached antecedent is a reachability gap, and naming it honestly is
-     worth more than hiding it. -->
+## 4. What The Bound Contract Does Not Watch
 
-| Property | Why the antecedent never fired | Unreachable, or just undriven? | What would reach it |
-|----------|--------------------------------|--------------------------------|---------------------|
-|          |                                | unreachable / undriven         |                     |
+**What The Scoreboard Covers That No Assertion Does:** For this design the assertions and the scoreboard check the same contract so they overlap a lot. The difference is when and where they look. The scoreboard only runs inside test_final.py and reads the outputs 1 ns after the falling edge, while the assertions watch every rising edge in all 5 tests, including the starter smoke tests that only check the count at a few points.
 
-## 4. What the bound contract does not watch
-
-The SVA proves the **control** contract. It does not watch the bytes.
-
-**What the scoreboard covers that no assertion does:**
-
-<!-- The golden-model scoreboard (models.fifo_model.FifoModel) predicts and
-     checks count / full / empty / head every cycle. That is what catches a
-     dropped data bit or an off-by-one rd_data — corruption the control
-     assertions cannot see. Name a specific bug in each category. -->
-
-| Bug | Caught by | Why the other mechanism misses it |
+| Bug | Caught By | Why The Other Mechanism Misses It |
 |-----|-----------|-----------------------------------|
-| <a control bug> | assertion #__ | |
-| <a data bug> | scoreboard | |
+| The count goes up by 2 on an unlocked cycle during the smoke tests | Caught by assertion #5 count_up | test_access_count only checks the count at 3 points and the scoreboard does not run during the smoke tests, so the assertion is the only check that runs every cycle there |
+| The magic key opens the trojan during test_magic_key | Caught by assertion #3 no_leak and the test's own check | Both catch it here, but the assertion fires right at the rising edge and points to the exact line in checker.sv while the test only reports that it failed |
+| The count is wrong right after a reset in the middle of random stimulus | Caught by scoreboard and assertion #7 reset_count | Both catch it, so this is a place where the two overlap and back each other up |
 
-**Still watched by neither:**
+**Still Watched By Neither:** A glitch on data_out or unlocked in the middle of a cycle, since both only look once per cycle. Anything before the first reset, since the assertions are turned off while reset is low and the scoreboard starts after reset. A backdoor on a trigger value the stimulus never sends, which is only covered by the formal proof.
 
 ---
 
-- [ ] Every property in `dut/fifo_sva.sv` has a row in section 1.
-- [ ] Every row carries a hit count from a real run, not an expectation.
-- [ ] Any zero-hit antecedent appears in section 3 rather than being dropped.
-- [ ] On clean RTL, every assertion holds.
+- [ X ] Every property in `sva/checker.sv` has a row in section 1.
+- [ X ] Every row carries a hit count from a real run, not an expectation.
+- [ X ] Any zero-hit antecedent appears in section 3 rather than being dropped.
+- [ X ] On clean RTL, every assertion holds.

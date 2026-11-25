@@ -8,6 +8,7 @@
 #   just test alu                 # run a testbench (Verilator)
 #   just test alu icarus          # ...with Icarus
 #   just mutate alu               # found/total on YOUR suite vs the RELEASED pool
+#   just mutate trojan            # also works for a capstone track
 #   just cover fifo_cov           # run a coverage testbench (emits a report)
 #   just waves alu                # write a waveform + print the file to open
 #   just demo 03 s2               # replay a class demo (see its DEMO.md)
@@ -25,7 +26,13 @@ test name sim="verilator":
 
 # score YOUR suite vs the RELEASED practice pool:  just mutate <name> [sim]
 mutate name sim="icarus":
-    python -m craft_mutate.mutate --tb tb/{{name}} --pool tb/{{name}}/mutants_released.yaml --sim {{sim}}
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ -d "tb/{{name}}" ]; then
+        python -m craft_mutate.mutate --tb tb/{{name}} --pool tb/{{name}}/mutants_released.yaml --sim {{sim}}
+    else
+        python -m craft_mutate.mutate --tb capstone/{{name}} --pool capstone/{{name}}/mutants_released.yaml --dut-dir capstone/{{name}} --sim {{sim}}
+    fi
 
 # run a coverage testbench (it writes its own report):  just cover <name>
 cover name sim="verilator":

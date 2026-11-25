@@ -1,0 +1,13 @@
+%Warning-DECLFILENAME: secure_gate_clean.sv:11:8: Filename 'secure_gate_clean' does not match MODULE name: 'secure_gate'
+   11 | module secure_gate #(
+      |        ^~~~~~~~~~~
+                       ... For warning description see https://verilator.org/warn/DECLFILENAME?v=5.020
+                       ... Use "/* verilator lint_off DECLFILENAME */" and lint_on around source to disable this message.
+%Error: Exiting due to 1 warning(s)
+%Warning-DECLFILENAME: secure_gate_trojan.sv:12:8: Filename 'secure_gate_trojan' does not match MODULE name: 'secure_gate'
+   12 | module secure_gate #(
+      |        ^~~~~~~~~~~
+                       ... For warning description see https://verilator.org/warn/DECLFILENAME?v=5.020
+                       ... Use "/* verilator lint_off DECLFILENAME */" and lint_on around source to disable this message.
+%Error: Exiting due to 1 warning(s)
+WAIVER DECLFILENAME: both variants must use module name secure_gate so one testbench runs either file (SPEC.md).
