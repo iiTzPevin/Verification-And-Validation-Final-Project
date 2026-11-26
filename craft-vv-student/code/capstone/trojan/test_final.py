@@ -6,11 +6,13 @@ from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, FallingEdge, Timer
 from cocotb_coverage.coverage import CoverPoint, CoverCross, coverage_db
 
+# The seed can be changed with SEED when running make.
 SEED = int( os.environ.get( "SEED", "6434" ) )
 EXPECTED_KEY = 0xA5A51234
 DW_MASK = 0xFF
 NUM_CYCLES = 500
 
+# The kinds of keys the random test can send.
 RIGHT_KEY = 0
 HIGH_HALF_ONLY = 1
 LOW_HALF_ONLY = 2
@@ -21,12 +23,14 @@ RANDOM_KEY = 6
 
 KEY_TYPES = [ "right_key", "high_half_only", "low_half_only", "one_bit_off", "all_zeros", "all_ones", "random_key" ]
 
+# The kinds of data the random test can send.
 DATA_ZERO = 0
 DATA_ONES = 1
 DATA_OTHER = 2
 
 DATA_TYPES = [ "zero", "ones", "other" ]
 
+# One cycle of random stimulus for the gate.
 @vsc.randobj
 class GateTransaction:
     def __init__( self ):
@@ -40,6 +44,7 @@ class GateTransaction:
 
         self.do_reset = vsc.rand_bit_t( 1 )
 
+    # Sets how often each key type, data type, and reset shows up.
     @vsc.constraint
     def type_weights( self ):
         self.key_type <= RANDOM_KEY
@@ -49,6 +54,7 @@ class GateTransaction:
         vsc.dist( self.data_type, [ vsc.weight( DATA_ZERO, 15 ), vsc.weight( DATA_ONES, 15 ), vsc.weight( DATA_OTHER, 70 ) ] )
         vsc.dist( self.do_reset, [ vsc.weight( 0, 96 ), vsc.weight( 1, 4 ) ] )
 
+    # Builds the two halves of the key for each key type.
     @vsc.constraint
     def key_rules( self ):
         with vsc.implies( self.key_type == RIGHT_KEY ):
@@ -71,6 +77,7 @@ class GateTransaction:
             self.key_high == 0xFFFF
             self.key_low == 0xFFFF
 
+    # Makes data_in match its data type.
     @vsc.constraint
     def data_rules( self ):
         with vsc.implies( self.data_type == DATA_ZERO ):
@@ -83,12 +90,14 @@ class GateTransaction:
             self.data_in != 0
             self.data_in != 0xFF
 
+# Turns the transaction into the 32 bit key to send.
 def make_key( transaction ):
     if int( transaction.key_type ) == ONE_BIT_OFF:
         return EXPECTED_KEY ^ ( 1 << int( transaction.flip_bit ) )
 
     return ( int( transaction.key_high ) << 16 ) | int( transaction.key_low )
 
+# Names the data value for the coverage bins.
 def get_data_type( data_in ):
     if data_in == 0:
         return "zero"
@@ -98,6 +107,7 @@ def get_data_type( data_in ):
 
     return "other"
 
+# Each of these picks out one value for its coverpoint.
 def pick_key_type( key_type, data_type, unlocked, did_reset ):
     return key_type
 
@@ -110,6 +120,7 @@ def pick_unlocked( key_type, data_type, unlocked, did_reset ):
 def pick_did_reset( key_type, data_type, unlocked, did_reset ):
     return did_reset
 
+# The coverage model with 4 coverpoints and 2 crosses.
 @CoverPoint( "top.key_type", xf=pick_key_type, bins=KEY_TYPES )
 @CoverPoint( "top.data_type", xf=pick_data_type, bins=DATA_TYPES )
 @CoverPoint( "top.unlocked", xf=pick_unlocked, bins=[ 0, 1 ] )
@@ -119,6 +130,7 @@ def pick_did_reset( key_type, data_type, unlocked, did_reset ):
 def sample_coverage( key_type, data_type, unlocked, did_reset ):
     pass
 
+# Starts the clock and holds reset for a few cycles.
 async def reset( dut ):
     cocotb.start_soon( Clock( dut.clk, 10, units="ns" ).start( ) )
 
@@ -132,6 +144,7 @@ async def reset( dut ):
     await FallingEdge( dut.clk )
     dut.rst_n.value = 1
 
+# Sets the inputs on the falling edge.
 async def driver( dut, key, data_in, rst_n ):
     await FallingEdge( dut.clk )
 
@@ -141,15 +154,18 @@ async def driver( dut, key, data_in, rst_n ):
 
     await Timer( 1, units="ns" )
 
+# Reads the three outputs.
 def monitor( dut ):
     return int( dut.unlocked.value ), int( dut.data_out.value ), int( dut.access_count.value )
 
+# What unlocked and data_out should be for this key.
 def expected_outputs( key, data_in ):
     if key == EXPECTED_KEY:
         return 1, data_in & DW_MASK
 
     return 0, 0
 
+# What access_count should be after the next clock.
 def expected_next_count( access_count, unlocked, rst_n ):
     if rst_n == 0:
         return 0
@@ -159,6 +175,7 @@ def expected_next_count( access_count, unlocked, rst_n ):
 
     return access_count
 
+# Checks all three outputs against what the spec says.
 def scoreboard( key, data_in, outputs, expected_count ):
     unlocked, data_out, access_count = outputs
     expected_unlocked, expected_data_out = expected_outputs( key, data_in )
@@ -167,6 +184,7 @@ def scoreboard( key, data_in, outputs, expected_count ):
     assert data_out == expected_data_out
     assert access_count == expected_count
 
+# Sends random keys, data, and resets and checks every cycle.
 @cocotb.test( )
 async def test_random_keys( dut ):
     random.seed( SEED )
@@ -197,6 +215,7 @@ async def test_random_keys( dut ):
     coverage_db.report_coverage( dut._log.info, bins=True )
     coverage_db.export_to_yaml( filename="coverage.yml" )
 
+# Holds the right key long enough for the count to wrap past 255.
 @cocotb.test( )
 async def test_count_wrap( dut ):
     await reset( dut )
@@ -207,6 +226,7 @@ async def test_count_wrap( dut ):
         scoreboard( EXPECTED_KEY, 0x5A, monitor( dut ), expected_count )
         expected_count = expected_next_count( expected_count, 1, 1 )
 
+# Holds the magic key across a clock edge and checks the gate stays locked.
 @cocotb.test( )
 async def test_magic_key( dut ):
     await reset( dut )
